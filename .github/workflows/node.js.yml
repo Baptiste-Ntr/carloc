@@ -40,8 +40,8 @@ jobs:
       run: npm test
       working-directory: ./back  # Specify the correct directory here
 
-    - name: Build
-      run: npm run build
+    - name: Start
+      run: npm run start
       working-directory: ./back  # Specify the correct directory here
 
   build-frontend:
