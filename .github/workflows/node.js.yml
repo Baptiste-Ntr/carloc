@@ -21,9 +21,12 @@ jobs:
 
     - name: Install dependencies
       run: npm install
+      working-directory: ./front  # Specify the correct directory here
 
     - name: Run the tests
       run: npm test
+      working-directory: ./front  # Specify the correct directory here
 
     - name: Build
       run: npm run build
+      working-directory: ./front  # Specify the correct directory here
