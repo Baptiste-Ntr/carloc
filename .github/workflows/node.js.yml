@@ -13,7 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        path: 'front'
+        path: '/front'
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
