@@ -72,8 +72,13 @@ jobs:
         MYSQL_DB: testdb
 
     - name: Start
-      run: npm run start
-      working-directory: ./back  # Specify the correct directory here
+      run: |
+        npm run start &
+        SERVER_PID=$!
+        sleep 10 # Attendez 10 secondes pour que le serveur démarre
+        echo "Le serveur a démarré, arrêt en cours..."
+        kill $SERVER_PID
+      working-directory: ./back  # Spécifiez le répertoire correct ici
       env:
         MYSQL_HOST: 127.0.0.1
         MYSQL_USER: root
