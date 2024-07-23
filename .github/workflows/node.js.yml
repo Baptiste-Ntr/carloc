@@ -23,7 +23,20 @@ jobs:
       run: npm install
       working-directory: ./front  # Specify the correct directory here
 
+    - name: Check for test files
+      id: check-tests
+      run: |
+        if ls ./front/*.test.js 1> /dev/null 2>&1; then
+          echo "Tests found, setting run_tests to true."
+          echo "::set-output name=run_tests::true"
+        else
+          echo "No tests found, setting run_tests to false."
+          echo "::set-output name=run_tests::false"
+        fi
+      working-directory: .
+
     - name: Run the tests
+      if: steps.check-tests.outputs.run_tests == 'true'
       run: npm test
       working-directory: ./front  # Specify the correct directory here
 
