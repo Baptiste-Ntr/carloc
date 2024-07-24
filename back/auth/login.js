@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const mysql = require('mysql');
-
+const bcrypt = require('bcrypt');
 
 app.use(express.json());
 
@@ -17,20 +17,29 @@ app.post('/', (req, res) => {
         database: 'carloc'
     })
 
+    const pswHash = bcrypt.hashSync(req.body.password, 10)
+
+
     connection.connect()
-    connection.query(`SELECT * FROM users WHERE USERNAME = '${req.body.username}' AND PASSWORD = '${req.body.password}'`, (err, result) => {
+    connection.query(`SELECT * FROM users WHERE EMAIL = '${req.body.email}'`, (err, result) => {
         if (err) {
             console.log('Error:', err)
             res.status(500).send('Error')
         } else {
-            if (result.length === 0) {
-                res.status(401).send('Unauthorized')
-            } else {
-                res.status(200).send('Authorized')
-            }
+            bcrypt.compare(req.body.password, pswHash, (err, result) => {
+                if (err) {
+                    console.log('Error:', err)
+                    res.status(500).send('Error')
+                } else {
+                    if (result) {
+                        res.status(200).send('Success')
+                    } else {
+                        res.status(401).send('Invalid credentials')
+                    }
+                }
+            })
         }
     })
-    connection.end()
 })
 
 module.exports = app;

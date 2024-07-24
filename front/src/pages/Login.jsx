@@ -1,5 +1,5 @@
 import toast from "react-hot-toast"
-import { redirect, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 
 const Login = () => {
 
@@ -16,13 +16,14 @@ const Login = () => {
             const response = await fetch(`http://localhost:5000/login`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'multipart/form-data'
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ email, password })
             })
 
             if (response.ok) {
-                redirect('/profile')
+                toast.success('Login successful')
+                navigate('/profile')
             } else if (response.status === 401) {
                 toast.error('Invalid credentials')
             } else {
@@ -37,8 +38,8 @@ const Login = () => {
         <div>
             <h1>Login</h1>
             <form onSubmit={handleSubmit}>
-                <input type="text" placeholder="Username" required />
-                <input type="password" placeholder="Password" required />
+                <input type="text" placeholder="Email" name="email" required />
+                <input type="password" placeholder="Password" name="password" required />
                 <button type="submit">Login</button>
             </form>
             <input value={'🏠'} type="button" onClick={() => navigate('/')} />

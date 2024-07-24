@@ -30,7 +30,7 @@ const Register = () => {
                 body: JSON.stringify({ email, password, name, username, confirmEmail, confirmPassword, pays, adresse, telephone })
             })
 
-            if (response.ok) {
+            if (response.status === 200) {
                 redirect('/profile')
             } else if (response.status === 401) {
                 toast.error('Invalid credentials')
