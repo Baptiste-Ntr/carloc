@@ -34,3 +34,5 @@ app.use('/login', require('./routes/auth/login.js'));
 app.use('/register', require('./routes/auth/register.js'));
 
 app.use('/profile', authenticateToken, require('./routes/profile.js'))
+
+app.use('/create_annonce', require ('./annonce/create_annonce.js'));
