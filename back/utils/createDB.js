@@ -21,13 +21,20 @@ const createDB = async () => {
                         console.log('Users table created')
                     }
                 })
-                connection.query('CREATE TABLE IF NOT EXISTS annonces (ID int NOT NULL AUTO_INCREMENT, ID_USER int, TITLE varchar(255), DESCRIPTION varchar(255), IMAGES_URL varchar(255), VEHICULE varchar(255), PUISSANCE float, CARBURANT varchar(255), LOCALISATION varchar(255), BOITE_VITESSE varchar(255), PRICE float, CREATED_AT datetime, UPDATED_AT datetime, PRIMARY KEY (ID), FOREIGN KEY (ID_USER) REFERENCES users(ID))', (err, result) => {
+                connection.query('CREATE TABLE IF NOT EXISTS cars (ID int NOT NULL AUTO_INCREMENT, ID_USER int, TITLE varchar(255), POWER float, FUEL varchar(255), TRANSMISSION varchar(255), PRICE float, KMS float, DATE datetime, CREATED_AT datetime, UPDATED_AT datetime, PRIMARY KEY (ID), FOREIGN KEY (ID_USER) REFERENCES users(ID))', (err, result) => {
                     if (err) {
-                        console.log('Error creating annonces table:', err)
+                        console.log('Error creating cars table:', err);
                     } else {
-                        console.log('Annonces table created')
+                        console.log('Cars table created');
                     }
-                })
+                });
+                connection.query('CREATE TABLE IF NOT EXISTS annonces (ID int NOT NULL AUTO_INCREMENT, ID_USER int, ID_CAR int, TITLE varchar(255), DESCRIPTION varchar(255), IMAGES_URL varchar(255), CREATED_AT datetime, UPDATED_AT datetime, PRIMARY KEY (ID), FOREIGN KEY (ID_USER) REFERENCES users(ID), FOREIGN KEY (ID_CAR) REFERENCES cars(ID))', (err, result) => {
+                    if (err) {
+                        console.log('Error creating annonces table:', err);
+                    } else {
+                        console.log('Annonces table created');
+                    }
+                });
                 connection.query('CREATE TABLE IF NOT EXISTS contrats (ID int NOT NULL AUTO_INCREMENT, ID_USER int, ID_ANNONCE int, DEBUT_CONTRAT datetime, FIN_CONTRAT datetime, PRIMARY KEY (ID), FOREIGN KEY (ID_USER) REFERENCES users(ID), FOREIGN KEY (ID_ANNONCE) REFERENCES annonces(ID))', (err, result) => {
                     if (err) {
                         console.log('Error creating contrats table:', err)
