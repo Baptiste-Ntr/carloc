@@ -1,10 +1,24 @@
 const createDB = require('./utils/createDB.js');
 const cors = require('cors');
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const app = express();
 const port = 5000;
+require('dotenv').config();
 
 app.use(cors());
+
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization']
+    const token = authHeader && authHeader.split(' ')[1]
+    if (token == null) return res.sendStatus(401)
+
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+        if (err) return res.sendStatus(403)
+        req.user = user
+        next()
+    })
+}
 
 app.get('/', (req, res) => {
     res.send('Hello World!')
@@ -15,8 +29,10 @@ app.listen(port, () => {
     createDB();
 })
 
-app.use('/login', require('./auth/login.js'));
+app.use('/login', require('./routes/auth/login.js'));
 
-app.use('/register', require('./auth/register.js'));
+app.use('/register', require('./routes/auth/register.js'));
+
+app.use('/profile', authenticateToken, require('./routes/profile.js'))
 
 app.use('/create_annonce', require ('./annonce/create_annonce.js'));
