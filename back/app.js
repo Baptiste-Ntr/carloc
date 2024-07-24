@@ -18,3 +18,5 @@ app.listen(port, () => {
 app.use('/login', require('./auth/login.js'));
 
 app.use('/register', require('./auth/register.js'));
+
+app.use('/create_annonce', require ('./annonce/create_annonce.js'));
