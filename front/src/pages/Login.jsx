@@ -1,9 +1,11 @@
 import toast from "react-hot-toast"
 import { useNavigate } from "react-router-dom"
+import { useUser } from "../components/context/userContext"
 
 const Login = () => {
 
     const navigate = useNavigate()
+    const { setEmail } = useUser()
 
     const handleSubmit = async (event) => {
         event.preventDefault()
@@ -22,6 +24,9 @@ const Login = () => {
             })
 
             if (response.ok) {
+                const { accessToken } = await response.json()
+                localStorage.setItem('accessToken', accessToken)
+                setEmail(email)
                 toast.success('Login successful')
                 navigate('/profile')
             } else if (response.status === 401) {
