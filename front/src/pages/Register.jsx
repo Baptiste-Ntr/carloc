@@ -1,26 +1,23 @@
-'use client'
-
-import { FormEvent } from "react"
-import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
+import { redirect, useNavigate } from "react-router-dom"
 
-const Page = () => {
+const Register = () => {
 
-    const router = useRouter()
+    const navigate = useNavigate()
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event) => {
         event.preventDefault()
 
         const formData = new FormData(event.currentTarget)
-        const name = formData.get("name") as string
-        const username = formData.get("username") as string
-        const email = formData.get("email") as string
-        const password = formData.get("password") as string
-        const confirmEmail = formData.get("confirmEmail") as string
-        const confirmPassword = formData.get("confirmPassword") as string
-        const pays = formData.get("pays") as string
-        const adresse = formData.get("adresse") as string
-        const telephone = formData.get("telephone") as string
+        const name = formData.get("name")
+        const username = formData.get("username")
+        const email = formData.get("email")
+        const password = formData.get("password")
+        const confirmEmail = formData.get("confirmEmail")
+        const confirmPassword = formData.get("confirmPassword")
+        const pays = formData.get("pays")
+        const adresse = formData.get("adresse")
+        const telephone = formData.get("telephone")
 
         console.log({ name, username, email, password, confirmEmail, confirmPassword, pays, adresse, telephone })
 
@@ -34,7 +31,7 @@ const Page = () => {
             })
 
             if (response.ok) {
-                router.push('/profile')
+                redirect('/profile')
             } else if (response.status === 401) {
                 toast.error('Invalid credentials')
             } else {
@@ -60,9 +57,9 @@ const Page = () => {
                 <input type="text" placeholder="Telephone" name="telephone" required />
                 <button type="submit">Register</button>
             </form>
-            <input value={'🏠'} type="button" onClick={() => router.push('/')} />
+            <input value={'🏠'} type="button" onClick={() => navigate('/')} />
         </div>
     )
 }
 
-export default Page
+export default Register

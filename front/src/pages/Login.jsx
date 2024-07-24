@@ -1,30 +1,28 @@
-'use client'
-
-import { FormEvent } from "react"
-import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
+import { redirect, useNavigate } from "react-router-dom"
 
-const Page = () => {
-    const router = useRouter()
+const Login = () => {
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    const navigate = useNavigate()
+
+    const handleSubmit = async (event) => {
         event.preventDefault()
 
         const formData = new FormData(event.currentTarget)
-        const email = formData.get("email") as string
-        const password = formData.get("password") as string
+        const email = formData.get("email")
+        const password = formData.get("password")
 
         try {
             const response = await fetch(`http://localhost:5000/login`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'multipart/form-data'
                 },
                 body: JSON.stringify({ email, password })
             })
 
             if (response.ok) {
-                router.push('/profile')
+                redirect('/profile')
             } else if (response.status === 401) {
                 toast.error('Invalid credentials')
             } else {
@@ -43,9 +41,9 @@ const Page = () => {
                 <input type="password" placeholder="Password" required />
                 <button type="submit">Login</button>
             </form>
-            <input value={'🏠'} type="button" onClick={() => router.push('/')} />
+            <input value={'🏠'} type="button" onClick={() => navigate('/')} />
         </div>
     )
 }
 
-export default Page
+export default Login
