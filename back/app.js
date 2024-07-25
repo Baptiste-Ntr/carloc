@@ -6,7 +6,13 @@ const app = express();
 const port = 5000;
 require('dotenv').config();
 
-app.use(cors());
+const corsOptions = {
+    origin: 'http://localhost:3000',
+    credentials: true,
+    optionsSuccessStatus: 200
+}
+
+app.use(cors(corsOptions));
 
 function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization']

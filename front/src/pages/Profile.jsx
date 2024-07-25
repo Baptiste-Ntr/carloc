@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { redirect, useNavigate } from "react-router-dom";
 import { useUser } from "../components/context/userContext";
+import { isExpired, decodeToken } from 'react-jwt'
 
 const Profile = () => {
 
     const navigate = useNavigate()
+    const { email, jwt } = useUser()
 
-    const { email } = useUser()
+    const [cookies, setCookies] = useState()
 
     const [profileInfo, setProfileInfo] = useState({
         adresse: '',
@@ -19,51 +21,55 @@ const Profile = () => {
         username: ''
     })
 
+    const getJWTToken = () => {
+        if (!decodeToken(jwt) || !jwt || jwt === 'undefined' || jwt === 'null' || jwt === '' || jwt === null || jwt === undefined) {
+            toast.error('You are not logged in. Please log in to view your profile.')
+            navigate('/login')
+        }
+
+        if (isExpired(jwt)) {
+            toast.error('Login expired. Please login again.')
+            navigate('/login')
+        }
+    }
+
     const getProfile = async () => {
         try {
-            const accessToken = localStorage.getItem('accessToken')
-            if (!accessToken) {
-                navigate('/')
-            }
-            try {
-                const response = await fetch(`http://localhost:5000/profile`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email })
+            const response = await fetch(`http://localhost:5000/profile`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${jwt}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email })
+            })
+            if (response.status === 200) {
+                const profileData = await response.json()
+                console.log(profileData)
+                setProfileInfo({
+                    adresse: profileData.result[0].ADRESSE,
+                    avatarUrl: profileData.result[0].AVATAR_URL,
+                    email: profileData.result[0].EMAIL,
+                    name: profileData.result[0].NAME,
+                    pays: profileData.result[0].PAYS,
+                    telephone: profileData.result[0].TELEPHONE,
+                    username: profileData.result[0].USERNAME
                 })
-                if (response.status === 200) {
-                    const profileData = await response.json()
-                    console.log(profileData)
-                    setProfileInfo({
-                        adresse: profileData.result[0].ADRESSE,
-                        avatarUrl: profileData.result[0].AVATAR_URL,
-                        email: profileData.result[0].EMAIL,
-                        name: profileData.result[0].NAME,
-                        pays: profileData.result[0].PAYS,
-                        telephone: profileData.result[0].TELEPHONE,
-                        username: profileData.result[0].USERNAME
-                    })
-                } else if (response.status === 500) {
-                    toast.error('An error occurred. Please try again later.')
-                    navigate('/')
-                } else {
-                    toast.error('An error occurred. Please try again later.')
-                    console.error('An error occurred. Please try again later.')
-                }
-            } catch (err) {
-                toast.error('An error occurend while trying to fetch the profile data.')
-                console.error(err)
+            } else if (response.status === 500) {
+                toast.error('An error occurred. Please try again later.')
+                navigate('/')
+            } else {
+                toast.error('An error occurred. Please try again later.')
+                console.error('An error occurred. Please try again later.')
             }
-        } catch (error) {
-            toast.error('You are not logged in. Please log in to view your profile.')
-            console.error(error)
+        } catch (err) {
+            toast.error('An error occurend while trying to fetch the profile data.')
+            console.error(err)
         }
     }
 
     useEffect(() => {
+        getJWTToken()
         getProfile()
     }, [])
 
@@ -80,7 +86,7 @@ const Profile = () => {
             telephone: formData.get("telephone"),
         }
 
-        const accessToken = localStorage.getItem('accessToken')
+        const accessToken = cookies.accessToken
         if (!accessToken) {
             toast.error('You are not logged in. Please log in to update your profile.')
             navigate('/')

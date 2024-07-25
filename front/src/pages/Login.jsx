@@ -1,11 +1,11 @@
 import toast from "react-hot-toast"
 import { useNavigate } from "react-router-dom"
 import { useUser } from "../components/context/userContext"
-
+import { isExpired, decodeToken } from 'react-jwt'
 const Login = () => {
 
     const navigate = useNavigate()
-    const { setEmail } = useUser()
+    const { setEmail, setJwt } = useUser()
 
     const handleSubmit = async (event) => {
         event.preventDefault()
@@ -17,6 +17,7 @@ const Login = () => {
         try {
             const response = await fetch(`http://localhost:5000/login`, {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -25,10 +26,16 @@ const Login = () => {
 
             if (response.ok) {
                 const { accessToken } = await response.json()
-                localStorage.setItem('accessToken', accessToken)
-                setEmail(email)
-                toast.success('Login successful')
-                navigate('/profile')
+                const jwtDecoded = decodeToken(accessToken)
+                if (!jwtDecoded || isExpired(accessToken)) {
+                    toast.error('Login expired. Please login again.')
+                    return
+                } else {
+                    setJwt(accessToken)
+                    setEmail(email)
+                    toast.success('Login successful')
+                    navigate('/profile')
+                }
             } else if (response.status === 401) {
                 toast.error('Invalid credentials')
             } else {
