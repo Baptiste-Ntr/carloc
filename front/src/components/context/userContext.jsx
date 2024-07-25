@@ -9,9 +9,11 @@ export const useUser = () => useContext(UserContext)
 export const UserProvider = ({ children }) => {
     const [email, setEmail] = useState('')
     const [jwt, setJwt] = useState('')
+    const [userId, setUserId] = useState('')
+
 
     return (
-        <UserContext.Provider value={{ email, setEmail, jwt, setJwt }}>
+        <UserContext.Provider value={{ email, setEmail, jwt, setJwt, userId, setUserId }}>
             {children}
         </UserContext.Provider>
     )

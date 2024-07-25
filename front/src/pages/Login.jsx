@@ -5,7 +5,7 @@ import { isExpired, decodeToken } from 'react-jwt'
 const Login = () => {
 
     const navigate = useNavigate()
-    const { setEmail, setJwt } = useUser()
+    const { setEmail, setJwt, setUserId } = useUser()
 
     const handleSubmit = async (event) => {
         event.preventDefault()
@@ -25,7 +25,7 @@ const Login = () => {
             })
 
             if (response.ok) {
-                const { accessToken } = await response.json()
+                const { accessToken, user } = await response.json()
                 const jwtDecoded = decodeToken(accessToken)
                 if (!jwtDecoded || isExpired(accessToken)) {
                     toast.error('Login expired. Please login again.')
@@ -33,6 +33,7 @@ const Login = () => {
                 } else {
                     setJwt(accessToken)
                     setEmail(email)
+                    setUserId(user)
                     toast.success('Login successful')
                     navigate('/profile')
                 }

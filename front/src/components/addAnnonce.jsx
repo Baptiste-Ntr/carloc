@@ -1,51 +1,62 @@
-import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useUser } from "./context/userContext";
+import toast from "react-hot-toast";
 
 function AddAnnonce() {
 
     const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm()
-    const [selectedImages, setSelectedImages] = useState([]);
 
-    useEffect(() => {
-        register('image', { required: false });
-    }, [register]);
+    const { jwt } = useUser()
 
 
-    const onSubmit = (data) => {
+    const onSubmit = async (data, e) => {
+        e.preventDefault()
+
         console.log(data)
+
+        const formData = new FormData()
+
+        formData.append('title', data.title)
+        formData.append('description', data.description)
+        formData.append('price', data.price)
+        formData.append('image_url', data.image_url)
+
+        try {
+            const response = await fetch('http://localhost:5000/create_annonce', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${jwt}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    title: data.title,
+                    description: data.description,
+                    price: data.price,
+                    image_url: data.image_url
+                })
+            })
+
+            if (response.status === 200) {
+                toast.success('Annonce created successfully')
+            } else {
+                toast.error('An error occurred. Please try again later.')
+            }
+        } catch (err) {
+            toast.error('An error occurred. Please try again later.')
+            console.log(err)
+        }
+
     }
-
-    const handleFilesChange = (e) => {
-        const files = [...e.target.files];
-        // Créer des objets de prévisualisation pour les nouveaux fichiers
-        const newFilesPreviews = files.map(file => ({
-            ...file,
-            preview: URL.createObjectURL(file)
-        }));
-        // Ajouter les nouveaux fichiers à l'état existant
-        setSelectedImages(prevImages => [...prevImages, ...newFilesPreviews]);
-        // Mettre à jour l'état du formulaire (si nécessaire)
-        setValue('image', [...selectedImages, ...files]);
-    };
-
-    useEffect(() => {
-        return () => selectedImages.forEach(file => URL.revokeObjectURL(file.preview));
-    }, [register])
 
     return (
         <div>
             <form onSubmit={handleSubmit(onSubmit)}>
                 <input type="text" id="title" name="title" {...register("title", { required: true })} /><br />
                 <textarea id="description" name="description" {...register('description', { required: true })} ></textarea><br />
-                <input type="file" id="image" multiple name="image" onChange={handleFilesChange} /><br />
                 <input type="number" id="price" name="price" {...register('price', { required: true })} /><br />
+                <input type="text" id="image_url" name="image_url" {...register('image_url', { required: true })} />
                 <input type="submit" value={"send"} />
             </form>
-            <div>
-                {selectedImages.map((file, index) => (
-                    <img key={index} src={file.preview} alt="preview" style={{ width: "100px", height: "100px" }} />
-                ))}
-            </div>
         </div>
     )
 }

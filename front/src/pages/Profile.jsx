@@ -1,15 +1,22 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { redirect, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "../components/context/userContext";
 import { isExpired, decodeToken } from 'react-jwt'
+import verifyJWT from "../utils/verifyJWT";
+import Car from "../components/Car";
+import useAuth from "../utils/hooks/useAuth";
 
 const Profile = () => {
 
-    const navigate = useNavigate()
-    const { email, jwt } = useUser()
+    const isAuthenticated = useAuth()
 
-    const [cookies, setCookies] = useState()
+    const [changeProfile, setChangeProfile] = useState(false)
+    const [addCar, setAddCar] = useState(false)
+    const [carsData, setCarsData] = useState([])
+
+    const navigate = useNavigate()
+    const { email, jwt, userId } = useUser()
 
     const [profileInfo, setProfileInfo] = useState({
         adresse: '',
@@ -68,11 +75,6 @@ const Profile = () => {
         }
     }
 
-    useEffect(() => {
-        getJWTToken()
-        getProfile()
-    }, [])
-
     const handleSubmit = async (event) => {
         event.preventDefault()
 
@@ -86,17 +88,16 @@ const Profile = () => {
             telephone: formData.get("telephone"),
         }
 
-        const accessToken = cookies.accessToken
-        if (!accessToken) {
-            toast.error('You are not logged in. Please log in to update your profile.')
-            navigate('/')
+        if (!verifyJWT(jwt)) {
+            toast.error('Login expired. Please login again.')
+            navigate('/login')
         }
 
         try {
             const response = await fetch(`http://localhost:5000/profile`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `Bearer ${accessToken}`,
+                    'Authorization': `Bearer ${jwt}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(data)
@@ -116,22 +117,116 @@ const Profile = () => {
 
     }
 
+    const handleSubmitCar = async (e) => {
+        e.preventDefault()
+        const formData = new FormData(e.currentTarget)
+        const data = {
+            userId: userId.id,
+            title: formData.get('title'),
+            power: formData.get('power'),
+            fuel: formData.get('fuel'),
+            transmission: formData.get('transmission'),
+            price: formData.get('price'),
+            kms: formData.get('kms'),
+            date: formData.get('date')
+        }
 
-    return (
-        <div>
-            <input value={'🏠'} type="button" onClick={() => navigate('/')} />
-            <h1>Profile</h1>
-            <form onSubmit={handleSubmit}>
-                <input type="email" placeholder="Email" name="email" value={profileInfo.email} onChange={(e) => setProfileInfo({ ...profileInfo, email: e.target.value })} />
-                <input type="text" placeholder="Name" name="name" value={profileInfo.name} onChange={(e) => setProfileInfo({ ...profileInfo, name: e.target.value })} />
-                <input type="text" placeholder="Username" name="username" value={profileInfo.username} onChange={(e) => setProfileInfo({ ...profileInfo, username: e.target.value })} />
-                <input type="text" placeholder="Country" name="pays" value={profileInfo.pays} onChange={(e) => setProfileInfo({ ...profileInfo, pays: e.target.value })} />
-                <input type="text" placeholder="Address" name="adresse" value={profileInfo.adresse} onChange={(e) => setProfileInfo({ ...profileInfo, adresse: e.target.value })} />
-                <input type="tel" placeholder="Phone" name="telephone" value={profileInfo.telephone} onChange={(e) => setProfileInfo({ ...profileInfo, telephone: e.target.value })} />
-                <input type="submit" value="Update" />
-            </form>
-        </div>
-    );
+        if (!verifyJWT(jwt)) {
+            toast.error('Login expired. Please login again.')
+            navigate('/login')
+        }
+
+        try {
+            const response = await fetch('http://localhost:5000/create_cars', {
+                method: 'POST',
+                headers: {
+                    "Authorization": `Bearer ${jwt}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            })
+
+            if (response.status === 200) {
+                toast.success('Car added successfully')
+                navigate('/profile')
+            } else {
+                toast.error('An error occurred. Please try again later.')
+                console.error('An error occurred. Please try again later.')
+            }
+        } catch (err) {
+            console.error(err)
+        }
+
+    }
+
+    const getProfileCars = async () => {
+        try {
+            const response = await fetch(`http://localhost:5000/get_cars`, {
+                method: 'POST',
+                headers: {
+                    "Authorization": `Bearer ${jwt}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ userId: userId.id })
+            })
+
+            if (response.status === 200) {
+                const profileCarsData = await response.json()
+                setCarsData(profileCarsData)
+            }
+        } catch (err) {
+            console.error(err)
+        }
+    }
+
+    useEffect(() => {
+        getJWTToken()
+        getProfile()
+        getProfileCars()
+    }, [])
+
+    if (!isAuthenticated) {
+        return (
+            <div>
+                <input value={'🏠'} type="button" onClick={() => navigate('/')} />
+                <h1>Profile</h1>
+                <button onClick={() => setChangeProfile(!changeProfile)}>Change Profile</button>
+                <button onClick={() => setAddCar(!addCar)}>Add Car</button>
+                {changeProfile && (
+                    <form onSubmit={handleSubmit}>
+                        <input type="email" placeholder="Email" name="email" value={profileInfo.email} onChange={(e) => setProfileInfo({ ...profileInfo, email: e.target.value })} />
+                        <input type="text" placeholder="Name" name="name" value={profileInfo.name} onChange={(e) => setProfileInfo({ ...profileInfo, name: e.target.value })} />
+                        <input type="text" placeholder="Username" name="username" value={profileInfo.username} onChange={(e) => setProfileInfo({ ...profileInfo, username: e.target.value })} />
+                        <input type="text" placeholder="Country" name="pays" value={profileInfo.pays} onChange={(e) => setProfileInfo({ ...profileInfo, pays: e.target.value })} />
+                        <input type="text" placeholder="Address" name="adresse" value={profileInfo.adresse} onChange={(e) => setProfileInfo({ ...profileInfo, adresse: e.target.value })} />
+                        <input type="tel" placeholder="Phone" name="telephone" value={profileInfo.telephone} onChange={(e) => setProfileInfo({ ...profileInfo, telephone: e.target.value })} />
+                        <input type="submit" value="Update" />
+                    </form>
+                )}
+                {addCar && (
+                    <form onSubmit={handleSubmitCar}>
+                        {/* TITLE POWER FUEL TRANSMISSION PRICE KMS DATE CREATED_AT */}
+                        <input type="text" placeholder="Title" name="title" />
+                        <input type="text" placeholder="Power" name="power" />
+                        <input type="text" placeholder="Fuel" name="fuel" />
+                        <input type="text" placeholder="Transmission" name="transmission" />
+                        <input type="number" placeholder="Price" name="price" />
+                        <input type="number" placeholder="Kms" name="kms" />
+                        <input type="date" placeholder="Date" name="date" />
+                        <input type="submit" value="Add Car" />
+                    </form>
+                )}
+                {console.log(carsData)}
+                {carsData.map((car, index) => (
+                    <Car key={index} car={car} jwt={jwt} />
+                ))}
+            </div>
+        );
+    }
+
+    return <div>Contenu Protégé</div>
+
+
 }
 
 export default Profile;

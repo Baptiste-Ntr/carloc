@@ -22,7 +22,8 @@ app.post('/', (req, res) => {
     const pswHash = bcrypt.hashSync(req.body.password, 10)
 
     connection.connect()
-    connection.query(`SELECT * FROM users WHERE EMAIL = '${req.body.email}'`, (err, result) => {
+    const query = 'SELECT * FROM users WHERE EMAIL = ?';
+    connection.query(query, [req.body.email], (err, results) => {
         if (err) {
             console.log('Error:', err)
             res.status(500).send('Error')
@@ -33,9 +34,11 @@ app.post('/', (req, res) => {
                     res.status(500).send('Error')
                 } else {
                     if (bcyrptResult) {
-                        const user = {id: result[0].ID}
+                        console.log(results)
+                        const user = {id: results[0].ID}
                         const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h'})
-                        res.status(200).json({accessToken})
+                        res.cookie('jwt', accessToken, {httpOnly: true, secure: true, sameSite: 'none'})
+                        res.status(200).json({accessToken, user})
                     } else {
                         res.status(401).send('Invalid credentials')
                     }
