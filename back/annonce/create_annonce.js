@@ -36,26 +36,10 @@ const connection = mysql.createConnection({
     database: 'carloc'
 })
 
-connection.connect((err) => {
-    if (err) {
-      console.error('Error connecting to database:', err);
-      return;
-    }
-    console.log('Connected to database');
-  
-    // Exécutez votre requête ici
-    connection.query('SELECT * FROM users', (err, results) => {
-      if (err) {
-        console.error('Error executing query:', err);
-        return;
-      }
-      console.log('Results:', results);
-    });
-  });
-
 
 //Route pour gérer la création d'annonce
 app.post('/', img.array('images', 10), (req, res, next) => {
+    connection.connect();
     const {title, description, vehicule, puissance, carburant, localisation, boite_vitesse, price } = req.body;
     const imageUrls = req.files.map( file => '/img/${file.filename}');
     
@@ -65,8 +49,7 @@ app.post('/', img.array('images', 10), (req, res, next) => {
         if(err) throw err;
         res.json({ message: 'Annonce créée avec succès', annonceID: results.insertId });
     });
+    connection.end()
 });
-
-connection.end()
 
 module.exports = app;

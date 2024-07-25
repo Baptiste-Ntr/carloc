@@ -89,7 +89,9 @@ app.post('/', (req, res) => {
     console.log(req.body.password)
     
     connection.connect()
-    connection.query(`INSERT INTO users (NAME, USERNAME, PASSWORD, PAYS, ADRESSE, TELEPHONE, EMAIL, AVATAR_URL) VALUES ('${req.body.name}', '${req.body.username}', '${req.body.password}', '${req.body.pays}', '${req.body.adresse}', '${req.body.telephone}', '${req.body.email}', '${req.body.avatar_url}')`, (err, result) => {
+    
+    const query = `INSERT INTO users (NAME, USERNAME, PASSWORD, PAYS, ADRESSE, TELEPHONE, EMAIL, AVATAR_URL) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    connection.query(query, [req.body.name, req.body.username, req.body.password, req.body.pays, req.body.adresse, req.body.telephone, req.body.email, req.body.avatar_url], (err, result) => {
         if (err) {
             console.log('Error:', err)
             res.status(500).send('Error')
