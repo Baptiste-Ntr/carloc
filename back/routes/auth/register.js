@@ -1,103 +1,51 @@
-const express = require('express');
-const app = express();
-const mysql = require('mysql');
-const bcrypt = require('bcrypt');
+const express = require('express')
+const mysql = require("mysql")
+const bcrypt = require('bcrypt')
+require('dotenv').config()
 
-app.use(express.json());
+const app = express()
 
-app.get('/', (req, res) => {
-    res.send('Register route')
+app.use(express.json())
+
+const connection = mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    database: process.env.DB_NAME
+})
+
+connection.connect((err) => {
+    if (err) {
+        console.error('Error connecting to the database in car:', err);
+        return;
+    }
 });
 
 app.post('/', (req, res) => {
-    const connection = mysql.createConnection({
-        host: 'localhost',
-        user: 'root',
-        password: 'root',
-        database: 'carloc'
-    })
+    const {name, username, password, email, pays, adresse, telephone} = req.body
 
-    console.log('req body',req.body)
-
-    // if (!req.body.name || !req.body.username || !req.body.password || !req.body.pays || !req.body.adresse || !req.body.telephone || !req.body.email || !req.body.avatar_url) {
-    //     res.status(400).send('Missing parameters')
-    //     return
-    // }
-
-    // if (req.body.password.length < 8) {
-    //     res.status(400).send('Password too short')
-    //     return
-    // }
-
-    // if (!req.body.email.includes('@')) {
-    //     res.status(400).send('Invalid email')
-    //     return
-    // }
-
-    // if (req.body.telephone.length !== 10) {
-    //     res.status(400).send('Invalid phone number')
-    //     return
-    // }
-
-    // if (req.body.avatar_url.length === 0) {
-    //     res.status(400).send('Invalid avatar URL')
-    //     return
-    // }
-
-    // if (req.body.pays.length === 0) {
-    //     res.status(400).send('Invalid country')
-    //     return
-    // }
-
-    // if (req.body.adresse.length === 0) {
-    //     res.status(400).send('Invalid address')
-    //     return
-    // }
-
-    // if (req.body.username.length === 0) {
-    //     res.status(400).send('Invalid username')
-    //     return
-    // }
-
-    // if (req.body.name.length === 0) {
-    //     res.status(400).send('Invalid name')
-    //     return
-    // }
-
-    // if (req.body.password.length === 0) {
-    //     res.status(400).send('Invalid password')
-    //     return
-    // }
-
-    // if (req.body.password !== req.body.password_confirm) {
-    //     res.status(400).send('Passwords do not match')
-    //     return
-    // }
-
-    // if (req.body.email !== req.body.email_confirm) {
-    //     res.status(400).send('Emails do not match')
-    //     return
-    // }
-
-    // if (req.body.email.length === 0) {
-    //     res.status(400).send('Invalid email')
-    //     return
-    // }
-
-    req.body.password = bcrypt.hashSync(req.body.password, 10)
-
-    console.log(req.body.password)
-    
-    connection.connect()
-    connection.query(`INSERT INTO users (NAME, USERNAME, PASSWORD, PAYS, ADRESSE, TELEPHONE, EMAIL, AVATAR_URL) VALUES ('${req.body.name}', '${req.body.username}', '${req.body.password}', '${req.body.pays}', '${req.body.adresse}', '${req.body.telephone}', '${req.body.email}', '${req.body.avatar_url}')`, (err, result) => {
+    const query = 'SELECT * FROM users WHERE username = ? OR email = ?'
+    connection.createQuery(query, [username, email], (err, result) => {
         if (err) {
-            console.log('Error:', err)
-            res.status(500).send('Error')
+            return res.status(500).json({ message: 'Internal error when trying to query' })
+        }
+        if (result.length > 0) {
+            return res.status(400).json({ message: 'User already exists' })
         } else {
-            res.status(200).send('User created')
+            bcrypt.hash(password, 10, (err, hash) => {
+                if (err) {
+                    return res.status(500).json({ message: 'Internal error when trying to hash password' })
+                }
+                const query = 'INSERT INTO users (NAME, USERNAME, PASSWORD, PAYS, ADRESSE, TELEPHONE, EMAIL) VALUES (?, ?, ?, ?, ?, ?, ?)'
+                connection.query(query, [name, username, hash, pays, adresse, telephone, email], (err, result) => {
+                    if (err) {
+                        return res.status(500).json({ message: 'Internal error when trying to insert user' })
+                    }
+                    return res.status(200).json({ message: 'User created' })
+                })
+            })
         }
     })
 })
-
 
 module.exports = app
