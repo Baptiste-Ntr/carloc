@@ -8,46 +8,6 @@ function AddAnnonce() {
 
     const { jwt } = useUser()
 
-
-    const onSubmit = async (data, e) => {
-        e.preventDefault()
-
-        console.log(data)
-
-        const formData = new FormData()
-
-        formData.append('title', data.title)
-        formData.append('description', data.description)
-        formData.append('price', data.price)
-        formData.append('image_url', data.image_url)
-
-        try {
-            const response = await fetch('http://localhost:5000/create_annonce', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${jwt}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    title: data.title,
-                    description: data.description,
-                    price: data.price,
-                    image_url: data.image_url
-                })
-            })
-
-            if (response.status === 200) {
-                toast.success('Annonce created successfully')
-            } else {
-                toast.error('An error occurred. Please try again later.')
-            }
-        } catch (err) {
-            toast.error('An error occurred. Please try again later.')
-            console.log(err)
-        }
-
-    }
-
     return (
         <div>
             <form onSubmit={handleSubmit(onSubmit)}>

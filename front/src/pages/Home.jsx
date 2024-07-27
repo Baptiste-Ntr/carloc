@@ -1,45 +1,44 @@
-import { useEffect, useState } from "react"
-import { Link } from "react-router-dom"
-import AddAnnonce from "../components/addAnnonce";
-import { useUser } from "../components/context/userContext";
-import verifyJWT from "../utils/verifyJWT";
+import { Link, useNavigate } from "react-router-dom";
+import useAuth from "../utils/hooks/useAuth";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import { AnnonceContainer } from "../components/AnnonceContainer";
 
 const Home = () => {
-    const [addAnnonceOpen, setAddAnnonceOpen] = useState(false);
-    const [isLogin, setIsLogin] = useState(false)
 
-    const { jwt } = useUser()
+    const navigate = useNavigate()
+    const auth = useAuth()
+
+    const [isAuth, setIsAuth] = useState(null)
 
     useEffect(() => {
-        const verify = async () => {
-            if (!await verifyJWT(jwt)) {
-                setIsLogin(false)
-                console.log('Not logged in')
-            } else {
-                setIsLogin(true)
-                console.log('Logged in')
-            }
+        if (auth.isAuthenticated === null) return // Attendre que l'état soit mis à jour
+
+        if (!auth.isAuthenticated) {
+            navigate('/login')
+            toast.error('You need to be logged in to access this page')
+        } else {
+            setIsAuth(true)
         }
-        verify()
-    })
+    }, [auth])
 
     return (
-        <div>
-            <h1>Home</h1>
-            {!isLogin && (
-                <>
-                    <Link to="/login">Login 🔒</Link>
-                    <Link to="/register">Register 📝</Link>
-                </>
-            )}
-            {addAnnonceOpen && (
-                <AddAnnonce />
-            )}
-            {isLogin && (
-                <button onClick={() => setAddAnnonceOpen(!addAnnonceOpen)}>Add Annonce</button>
-            )}
-        </div>
+        isAuth ? (
+            <div>
+                <h1>Home</h1>
+                <Link to="/profile">👤 Profile</Link>
+                <section>
+                    <AnnonceContainer />
+                </section>
+            </div>
+        ) : (
+            <div>
+                <h1>Home</h1>
+                <Link to="/login">🔑 Login</Link>
+                <Link to={"/register"}>📝 Register</Link>
+            </div >
+        )
     )
 }
 
-export default Home   
+export default Home;

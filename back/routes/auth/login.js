@@ -1,51 +1,64 @@
-const express = require('express');
-const app = express();
-const mysql = require('mysql');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-require('dotenv').config();
+const express = require('express')
+const bcrypt = require('bcrypt')
+const mysql = require('mysql')
+const jwt = require('jsonwebtoken')
+require('dotenv').config()
+const app = express()
 
-app.use(express.json());
-
-app.get('/', (req, res) => {
-    res.send('Hello World!')
+const connection = mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    database: process.env.DB_NAME
 })
+
+app.use(express.json())
+
+connection.connect((err) => {
+    if (err) {
+        console.error('Error connecting to the database in car:', err);
+        return;
+    }
+});
 
 app.post('/', (req, res) => {
-    const connection = mysql.createConnection({
-        host: 'localhost',
-        user: 'root',
-        password: 'root',
-        database: 'carloc'
-    })
+    const { email, password } = req.body;
 
-    const pswHash = bcrypt.hashSync(req.body.password, 10)
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Missing username or password' });
+    }
 
-    connection.connect()
-    const query = 'SELECT * FROM users WHERE EMAIL = ?';
-    connection.query(query, [req.body.email], (err, results) => {
-        if (err) {
-            console.log('Error:', err)
-            res.status(500).send('Error')
+    const query = 'SELECT * FROM users WHERE email = ?';
+    connection.query(query, [email], (err, result) => {
+        if(err) {
+            return res.status(500).json({ message: 'Internal error when trying to query' });
+        }
+        if(result.length === 0) {
+            return res.status(401).json({ message: 'User not found' });
         } else {
-            bcrypt.compare(req.body.password, pswHash, (err, bcyrptResult) => {
-                if (err) {
-                    console.log('Error:', err)
-                    res.status(500).send('Error')
-                } else {
-                    if (bcyrptResult) {
-                        console.log(results)
-                        const user = {id: results[0].ID}
-                        const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h'})
-                        res.cookie('jwt', accessToken, {httpOnly: true, secure: true, sameSite: 'none'})
-                        res.status(200).json({accessToken, user})
-                    } else {
-                        res.status(401).send('Invalid credentials')
-                    }
+            const user = result[0];
+            // console.log(user);
+            bcrypt.compare(password, user.PASSWORD, (err, result) => {
+                if(err) {
+                    return res.status(500).json({ message: 'Internal error when trying to compare passwords' });
                 }
-            })
+                if(result) {
+                    const token = jwt.sign({id: user.ID}, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '15min'})
+                    res.cookie('jwt', token, {
+                        httpOnly: true,
+                        sameSite: "strict",
+                        secure: process.env.NODE_ENV === 'production',
+                        expires: new Date(Date.now() + 900000)
+                    })
+                    return res.status(200).json({ message: 'Logged in' });
+                } else {
+                    return res.status(401).json({ message: 'Wrong password' });
+                }
+            });
         }
     })
+
+    
 })
 
-module.exports = app;
+module.exports = app

@@ -1,63 +1,42 @@
-import toast from "react-hot-toast"
-import { useNavigate } from "react-router-dom"
-import { useUser } from "../components/context/userContext"
-import { isExpired, decodeToken } from 'react-jwt'
+import { useForm } from 'react-hook-form';
+import { fetchData } from '../utils/fetchData';
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+
 const Login = () => {
 
-    const navigate = useNavigate()
-    const { setEmail, setJwt, setUserId } = useUser()
+    const { register, handleSubmit } = useForm();
 
-    const handleSubmit = async (event) => {
-        event.preventDefault()
+    const navigate = useNavigate();
 
-        const formData = new FormData(event.currentTarget)
-        const email = formData.get("email")
-        const password = formData.get("password")
-
+    const onSubmit = async (data) => {
         try {
-            const response = await fetch(`http://localhost:5000/login`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email, password })
-            })
-
-            if (response.ok) {
-                const { accessToken, user } = await response.json()
-                const jwtDecoded = decodeToken(accessToken)
-                if (!jwtDecoded || isExpired(accessToken)) {
-                    toast.error('Login expired. Please login again.')
-                    return
-                } else {
-                    setJwt(accessToken)
-                    setEmail(email)
-                    setUserId(user)
-                    toast.success('Login successful')
-                    navigate('/profile')
-                }
-            } else if (response.status === 401) {
-                toast.error('Invalid credentials')
+            const response = await fetchData('http://localhost:5000/login', 'POST', { 'Content-Type': 'application/json', }, JSON.stringify(data))
+            if (response.status === 200) {
+                toast.success('Login successful')
+                navigate('/profile')
             } else {
-                toast.error('An error occurred. Please try again later.')
+                toast.error(response.message)
             }
-        } catch (error) {
-            console.error(error)
+            // console.log('Token:', token)
+            console.log('Login response:', response)
+        } catch (err) {
+            console.log('Error logging in:', err)
         }
     }
 
     return (
         <div>
             <h1>Login</h1>
-            <form onSubmit={handleSubmit}>
-                <input type="text" placeholder="Email" name="email" required />
-                <input type="password" placeholder="Password" name="password" required />
+            <form onSubmit={handleSubmit(onSubmit)}>
+                <label htmlFor="email">Email:</label>
+                <input type="email" id="email" name="email" {...register("email", { required: true })} />
+                <label htmlFor="password">Password:</label>
+                <input type="password" id="password" name="password" {...register("password", { required: true })} />
                 <button type="submit">Login</button>
             </form>
-            <input value={'🏠'} type="button" onClick={() => navigate('/')} />
         </div>
     )
 }
 
-export default Login
+export default Login;

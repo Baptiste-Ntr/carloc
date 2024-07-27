@@ -1,124 +1,98 @@
-import toast from "react-hot-toast"
-import { useState } from "react"
-
 /* eslint-disable react/prop-types */
-const Car = ({ car, jwt }) => {
+import toast from "react-hot-toast"
+import { fetchData } from "../utils/fetchData"
+import { useState } from "react"
+import { useForm } from "react-hook-form"
 
+export const Car = ({ car, isDeleted, isEdited }) => {
 
-    const formatDateForInput = (date) => {
-        const d = new Date(date);
-        let month = '' + (d.getMonth() + 1),
-            day = '' + d.getDate(),
-            year = d.getFullYear();
+    const [isEditing, setIsEditing] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
 
-        if (month.length < 2)
-            month = '0' + month;
-        if (day.length < 2)
-            day = '0' + day;
-
-        return [year, month, day].join('-');
-    }
-    const date = formatDateForInput(car.DATE)
-
-    const [isCarEdit, setIsCarEdit] = useState(false)
-
-    const [carData, setCarData] = useState({
-        title: car.TITLE,
-        power: car.POWER,
-        fuel: car.FUEL,
-        price: car.PRICE,
-        kms: car.KMS,
-        date: date,
-        updatedAt: null
+    const { register, handleSubmit } = useForm({
+        defaultValues: {
+            title: car.TITLE,
+            power: car.POWER,
+            fuel: car.FUEL,
+            price: car.PRICE,
+            kms: car.KMS,
+            date: car.DATE,
+        }
     })
 
-    console.log(car)
+    const handleEdit = async (data) => {
+        const updatedData = {
+            ...data,
+            idUser: car.ID_USER,
+            updatedAt: new Date('yyyy-MM-dd HH:mm:ss')
+        }
+        try {
+            const response = await fetchData(`http://localhost:5000/cars/${car.ID}`, 'PUT', { 'Content-Type': 'application/json', }, JSON.stringify(updatedData))
+            if (response.status === 200) {
+                toast.success('Car edited')
+                setIsEditing(false)
+                isEdited(true)
+                console.log('Car edited:', response.data)
+            } else {
+                console.log('Error editing car:', response.message)
+                toast.error('Error editing car')
+                isEdited(false)
+            }
+        } catch (err) {
+            console.log('Error editing car:', err)
+        }
+    }
 
     const handleDelete = async () => {
         try {
-            const response = await fetch('http://localhost:5000/cars', {
-                method: 'DELETE',
-                headers: {
-                    "Authorization": `Bearer ${jwt}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ carId: car.ID })
-            })
-
+            const response = await fetchData(`http://localhost:5000/cars/${car.ID}`, 'DELETE', { 'Content-Type': 'application/json', })
             if (response.status === 200) {
-                console.log('Car deleted successfully')
-                toast.success('Car deleted successfully')
+                toast.success('Car deleted')
+                isDeleted(true)
+                setIsDeleting(false)
+                console.log('Car deleted:', response.data)
             } else {
-                console.error('An error occurred. Please try again later.')
-                toast.error('An error occurred. Please try again later.')
+                console.log('Error deleting car:', response.message)
+                toast.error('Error deleting car')
+                isDeleted(false)
             }
-
         } catch (err) {
-            console.log(err)
+            console.log('Error deleting car:', err)
         }
     }
 
-    const handleEdit = async () => {
-
-        try {
-            const response = await fetch('http://localhost:5000/cars', {
-                method: 'PUT',
-                headers: {
-                    "Authorization": `Bearer ${jwt}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ title: carData.title, power: carData.power, fuel: carData.fuel, price: carData.price, kms: carData.kms, date: carData.date, carId: car.ID })
-            })
-
-            if (response.status === 200) {
-                console.log('Car edited successfully')
-                toast.success('Car edited successfully')
-                setIsCarEdit(!isCarEdit)
-            } else {
-                console.error('An error occurred. Please try again later.')
-                toast.error('An error occurred. Please try again later.')
-            }
-
-        } catch (err) {
-            console.log(err)
-        }
-
+    if (isEditing) {
+        return (
+            <form onSubmit={handleSubmit(handleEdit)}>
+                <input type="text" name="title" placeholder={car.TITLE} {...register('title', { required: true })} />
+                <input type="text" name="power" placeholder={car.POWER} {...register('power', { required: true })} />
+                <input type="text" name="fuel" placeholder={car.FUEL} {...register('fuel', { required: true })} />
+                <input type="text" name="price" placeholder={car.PRICE} {...register('price', { required: true })} />
+                <input type="text" name="kms" placeholder={car.KMS} {...register('kms', { required: true })} />
+                <input type="date" name="date" {...register('date', { required: true })} />
+                <input type="submit" value="Save" />
+                <input type="button" value="❌" onClick={() => setIsEditing(!isEditing)} />
+            </form>
+        )
     }
 
     return (
-        <>
-            <section>
+        <div>
+            <h2>{car.TITLE}</h2>
+            <p>Power: {car.POWER} hp</p>
+            <p>Fuel: {car.FUEL}</p>
+            <p>Price per day: {car.PRICE} €</p>
+            <p>Kms: {car.KMS}</p>
+            <p>Date: {car.DATE}</p>
+            <p>Created at: {car.CREATED_AT}</p>
+            <p>Updated at: {car.UPDATED_AT}</p>
 
-            </section>
-            {!isCarEdit ? (
-                <>
-                    <div>
-                        <h1>{car.TITLE}</h1>
-                        <p>{car.POWER} ch.</p>
-                        <p>{car.FUEL}</p>
-                        <p>{car.PRICE}€/jour</p>
-                        <p>{car.KMS} kms</p>
-                        <p>Disponible le {date}</p>
-                    </div>
-                    <div>
-                        <input type="button" value="Modifier 📝" onClick={() => { setIsCarEdit(!isCarEdit) }} />
-                        <input type='button' value={"Supprimer ❌"} onClick={handleDelete} />
-                    </div>
-                </>
-            ) : (
-                <div>
-                    <input type="text" name="title" placeholder="Nom" value={carData.title} onChange={(e) => setCarData({ ...carData, title: e.target.value })} />
-                    <input type="text" name="power" placeholder="Puissance" value={carData.power} onChange={(e) => { setCarData({ ...carData, power: e.target.value }) }} />
-                    <input type="text" name="fuel" placeholder="Fuel" value={carData.fuel} onChange={(e) => { setCarData({ ...carData, fuel: e.target.value }) }} />
-                    <input type="text" name="price" placeholder="Prix /jours" value={carData.price} onChange={(e) => { setCarData({ ...carData, price: e.target.value }) }} />
-                    <input type="text" name="kms" placeholder="Kilomètres" value={carData.kms} onChange={(e) => { setCarData({ ...carData, kms: e.target.value }) }} />
-                    <input type="date" name='date' value={carData.date} onChange={(e) => { setCarData({ ...carData, date: e.target.value }) }} />
-                    <input type="submit" value="Valider" onClick={handleEdit} />
-                    <input type="button" value="❌" onClick={() => { setIsCarEdit(!isCarEdit) }} />
-                </div >
-            )}
-        </>
+            <nav>
+                <input type="button" value="Edit 🛠️" onClick={() => setIsEditing(!isEditing)} />
+                <input type="button" value="Delete ❌" onClick={() => handleDelete()} />
+            </nav>
+        </div>
     )
-}
 
-export default Car;
+
+}
